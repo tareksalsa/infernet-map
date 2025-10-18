@@ -7,28 +7,69 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; background: #000; }
-    #map { width: 100%; height: 100%; }
-    .leaflet-tooltip { background: rgba(0,0,0,0.7); color: #fff; border: none; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: radial-gradient(circle at center, #0a0a0a 20%, #000 100%);
+      font-family: "Inter", sans-serif;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      filter: brightness(0.8) contrast(1.1);
+      pointer-events: none; /* تمنع التحريك أو الزوم */
+    }
+
+    .dashboard {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(20, 20, 20, 0.85);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,255,255,0.2);
+      font-size: 14px;
+      line-height: 1.6;
+      backdrop-filter: blur(4px);
+    }
+
+    .dashboard span {
+      color: cyan;
+      font-weight: bold;
+    }
+
+    .leaflet-tooltip {
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      border: none;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div class="dashboard" id="stats">Loading...</div>
 
   <script>
     const map = L.map('map', {
       center: [20, 0],
       zoom: 2,
       zoomControl: false,
-      dragging: true,
-      scrollWheelZoom: false
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false
     });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: ''
     }).addTo(map);
 
-    // Data embedded directly (no fetch)
     const nodes = [
       { name: "Tokyo 🇯🇵", lat: 35.6895, lon: 139.6917, status: "online", tasks: 12, completed: 48 },
       { name: "Singapore 🇸🇬", lat: 1.3521, lon: 103.8198, status: "online", tasks: 9, completed: 41 },
@@ -40,15 +81,15 @@
       { name: "Sydney 🇦🇺", lat: -33.8688, lon: 151.2093, status: "online", tasks: 7, completed: 30 }
     ];
 
-    const colors = {
-      online: "lime",
-      maintenance: "yellow",
-      offline: "red"
-    };
-
-    const markers = [];
+    const colors = { online: "lime", maintenance: "yellow", offline: "red" };
+    let onlineCount = 0, totalTasks = 0, totalCompleted = 0;
+    const points = [];
 
     nodes.forEach(n => {
+      if (n.status === "online") onlineCount++;
+      totalTasks += n.tasks;
+      totalCompleted += n.completed;
+
       const marker = L.circleMarker([n.lat, n.lon], {
         radius: 8,
         color: colors[n.status],
@@ -56,23 +97,32 @@
       }).addTo(map);
 
       marker.bindTooltip(
-        `<b>${n.name}</b><br>
-        Status: ${n.status}<br>
-        Tasks: ${n.tasks}<br>
-        Completed: ${n.completed}`
+        `<b>${n.name}</b><br>Status: ${n.status}<br>Tasks: ${n.tasks}<br>Completed: ${n.completed}`
       );
 
-      markers.push(marker.getLatLng());
+      points.push(marker.getLatLng());
     });
 
-    // Draw connection lines between major regions
-    for (let i = 0; i < markers.length - 1; i++) {
-      L.polyline([markers[i], markers[i + 1]], {
-        color: 'cyan',
-        weight: 1.5,
-        opacity: 0.6
-      }).addTo(map);
+    // خطوط الاتصال بين كل نودز قريبة
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        const dist = map.distance(points[i], points[j]);
+        if (dist < 9000000) {
+          L.polyline([points[i], points[j]], {
+            color: 'rgba(0,255,255,0.3)',
+            weight: 1.2
+          }).addTo(map);
+        }
+      }
     }
+
+    // تحديث الداشبورد
+    document.getElementById('stats').innerHTML = `
+      🌐 <b>Nodes:</b> <span>${nodes.length}</span><br>
+      🟢 <b>Online:</b> <span>${onlineCount}</span><br>
+      ⚙️ <b>Tasks:</b> <span>${totalTasks}</span><br>
+      ✅ <b>Completed:</b> <span>${totalCompleted}</span>
+    `;
   </script>
 </body>
 </html>
