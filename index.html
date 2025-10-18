@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Infernet Node Dashboard</title>
+  <title>Infernet Global Nodes</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-  <!-- Dashboard section -->
+  <!-- Dashboard -->
   <div id="dashboard">
     <div class="stat">
       <h2 id="nodesCount">0</h2>
@@ -19,60 +19,71 @@
       <h2 id="tasksCount">0</h2>
       <p>Running Tasks</p>
     </div>
-    <div class="stat">
-      <h2 id="completedCount">0</h2>
-      <p>Completed</p>
-    </div>
   </div>
 
   <!-- Map -->
   <div id="map"></div>
 
   <script>
-    // Create map
+    // Create a static map
     const map = L.map("map", {
+      zoomControl: false,
       worldCopyJump: false,
-      minZoom: 2,
-      maxZoom: 5
-    }).setView([20, 0], 2);
+      dragging: false,
+      zoomSnap: 0.5,
+      minZoom: 2.3,
+      maxZoom: 2.3
+    }).setView([25, 0], 2.3);
 
-    // Dark background tiles
+    // Dark background
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution: "&copy; CARTO",
-      subdomains: "abcd"
+      subdomains: "abcd",
+      noWrap: true
     }).addTo(map);
 
-    // Load node data
+    // Load nodes
     fetch("nodes.json")
       .then(res => res.json())
       .then(data => {
-        let activeNodes = 0, runningTasks = 0, completed = 0;
+        let activeNodes = 0, runningTasks = 0;
+        const coords = [];
 
         data.nodes.forEach(node => {
-          const marker = L.circleMarker([node.lat, node.lon], {
-            radius: 8,
-            color: node.status === "online" ? "#00ff88" : "#ff4444",
-            fillOpacity: 0.85,
-            weight: 1
-          }).addTo(map);
-
-          marker.bindPopup(`
-            <b>${node.name}</b><br>
-            🌍 ${node.region}<br>
-            ⚙️ v${node.version}<br>
-            🧠 Tasks: ${node.tasks}<br>
-            🔌 Status: <b style="color:${node.status === "online" ? "#00ff88" : "#ff4444"}">${node.status}</b>
-          `);
-
           if (node.status === "online") activeNodes++;
           runningTasks += node.tasks;
-          completed += node.completed;
+          coords.push([node.lat, node.lon]);
+
+          // Pulse icon
+          const pulseIcon = L.divIcon({
+            className: "pulse-icon",
+            html: `<div class="pulse"></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
+
+          const marker = L.marker([node.lat, node.lon], { icon: pulseIcon }).addTo(map);
+          marker.bindPopup(`
+            <b>${node.name}</b><br>
+            ${node.region}<br>
+            Tasks: ${node.tasks}
+          `);
         });
 
-        // Update dashboard numbers
+        // Draw random network lines
+        for (let i = 0; i < coords.length - 1; i++) {
+          const next = coords[i + 1];
+          const prev = coords[i];
+          L.polyline([prev, next], {
+            color: "#00ff88",
+            weight: 1,
+            opacity: 0.5,
+            dashArray: "5, 8"
+          }).addTo(map);
+        }
+
+        // Update dashboard stats
         document.getElementById("nodesCount").textContent = activeNodes;
         document.getElementById("tasksCount").textContent = runningTasks;
-        document.getElementById("completedCount").textContent = completed;
       });
   </script>
 </body>
