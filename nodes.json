@@ -1,0 +1,80 @@
+const map = L.map('map', {
+  center: [20, 0],
+  zoom: 2,
+  zoomControl: false,
+  dragging: false,
+  scrollWheelZoom: false
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: ''
+}).addTo(map);
+
+const nodes = [
+  { name: "Tokyo 🇯🇵", lat: 35.6895, lon: 139.6917, status: "online", tasks: 12, completed: 48 },
+  { name: "Singapore 🇸🇬", lat: 1.3521, lon: 103.8198, status: "online", tasks: 9, completed: 41 },
+  { name: "Frankfurt 🇩🇪", lat: 50.1109, lon: 8.6821, status: "online", tasks: 6, completed: 38 },
+  { name: "London 🇬🇧", lat: 51.5074, lon: -0.1278, status: "busy", tasks: 8, completed: 32 },
+  { name: "San Francisco 🇺🇸", lat: 37.7749, lon: -122.4194, status: "maintenance", tasks: 3, completed: 27 },
+  { name: "Toronto 🇨🇦", lat: 43.65107, lon: -79.347015, status: "online", tasks: 5, completed: 34 },
+  { name: "São Paulo 🇧🇷", lat: -23.5505, lon: -46.6333, status: "offline", tasks: 0, completed: 22 },
+  { name: "Sydney 🇦🇺", lat: -33.8688, lon: 151.2093, status: "online", tasks: 7, completed: 30 }
+];
+
+const colors = {
+  online: "lime",
+  busy: "orange",
+  maintenance: "yellow",
+  offline: "red"
+};
+
+let onlineCount = 0;
+let totalTasks = 0;
+
+const points = [];
+
+nodes.forEach(n => {
+  if (n.status !== "offline") onlineCount++;
+  totalTasks += n.tasks;
+
+  const marker = L.circleMarker([n.lat, n.lon], {
+    radius: 8,
+    color: colors[n.status],
+    fillOpacity: 0.9
+  }).addTo(map);
+
+  marker.bindTooltip(
+    `<b>${n.name}</b><br>
+    Status: ${n.status}<br>
+    Tasks: ${n.tasks}<br>
+    Completed: ${n.completed}`
+  );
+
+  points.push(marker.getLatLng());
+});
+
+// Update dashboard
+document.getElementById("onlineCount").textContent = `Online Nodes: ${onlineCount}`;
+document.getElementById("taskCount").textContent = `Total Tasks: ${totalTasks}`;
+
+// Animated connection lines
+function drawPulsingLines() {
+  const svg = L.svg().addTo(map);
+  const svgLayer = d3.select(svg._rootGroup);
+
+  svgLayer.selectAll("line")
+    .data(points.slice(0, points.length - 1))
+    .enter()
+    .append("line")
+    .attr("x1", (d, i) => map.latLngToLayerPoint(d).x)
+    .attr("y1", (d, i) => map.latLngToLayerPoint(d).y)
+    .attr("x2", (d, i) => map.latLngToLayerPoint(points[i + 1]).x)
+    .attr("y2", (d, i) => map.latLngToLayerPoint(points[i + 1]).y)
+    .attr("class", "pulse-line");
+}
+
+// Load D3 for animation
+const script = document.createElement("script");
+script.src = "https://d3js.org/d3.v7.min.js";
+script.onload = drawPulsingLines;
+document.head.appendChild(script);
