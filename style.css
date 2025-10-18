@@ -1,0 +1,27 @@
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background-color: #000;
+  color: white;
+}
+
+#map {
+  height: 100vh;
+  width: 100%;
+}
+
+.leaflet-popup-content {
+  font-size: 14px;
+  color: #fff;
+}
+
+.leaflet-container {
+  background: #000;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #111;
+  color: #fff;
+  border-radius: 10px;
+  border: 1px solid #333;
+}
