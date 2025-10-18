@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infernet Global Nodes Map 🌐</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    // Initialize the map
+    const map = L.map("map").setView([20, 0], 2);
+
+    // Dark map background
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 6,
+      attribution: "&copy; <a href='https://carto.com/'>CARTO</a>",
+    }).addTo(map);
+
+    // Load node data
+    fetch("nodes.json")
+      .then((res) => res.json())
+      .then((data) => {
+        data.nodes.forEach((node) => {
+          const marker = L.circleMarker([node.lat, node.lon], {
+            radius: 7,
+            color: node.status === "online" ? "#00ff88" : "#ff4444",
+            fillOpacity: 0.8
+          }).addTo(map);
+
+          marker.bindPopup(`
+            <b>${node.name}</b><br>
+            🌍 Region: ${node.region}<br>
+            ⚙️ Version: ${node.version}<br>
+            🔌 Status: <b style="color:${node.status === "online" ? "#00ff88" : "#ff4444"}">${node.status}</b>
+          `);
+        });
+      });
+  </script>
+</body>
+</html>
