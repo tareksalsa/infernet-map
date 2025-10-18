@@ -1,11 +1,11 @@
 {
   "nodes": [
-    { "name": "Tokyo 🇯🇵", "region": "East Asia", "lat": 35.6895, "lon": 139.6917, "status": "online", "tasks": 12 },
-    { "name": "Singapore 🇸🇬", "region": "Southeast Asia", "lat": 1.3521, "lon": 103.8198, "status": "online", "tasks": 9 },
-    { "name": "Frankfurt 🇩🇪", "region": "Europe", "lat": 50.1109, "lon": 8.6821, "status": "online", "tasks": 6 },
-    { "name": "London 🇬🇧", "region": "Europe", "lat": 51.5074, "lon": -0.1278, "status": "online", "tasks": 8 },
-    { "name": "San Francisco 🇺🇸", "region": "North America", "lat": 37.7749, "lon": -122.4194, "status": "online", "tasks": 5 },
-    { "name": "Toronto 🇨🇦", "region": "North America", "lat": 43.65107, "lon": -79.347015, "status": "online", "tasks": 4 },
-    { "name": "Sydney 🇦🇺", "region": "Oceania", "lat": -33.8688, "lon": 151.2093, "status": "online", "tasks": 7 }
+    { "id": 1, "name": "Asia Node", "coords": [35, 100], "status": "active" },
+    { "id": 2, "name": "Europe Node", "coords": [51, 10], "status": "busy" },
+    { "id": 3, "name": "US Node", "coords": [40, -100], "status": "offline" }
+  ],
+  "links": [
+    { "from": [35, 100], "to": [51, 10] },
+    { "from": [51, 10], "to": [40, -100] }
   ]
 }
