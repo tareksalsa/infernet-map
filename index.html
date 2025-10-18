@@ -1,22 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Infernet Node Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Infernet — Network Map (Demo)</title>
+
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-  <div id="dashboard">
-    <div id="stats">
-      <h2>Infernet Node Dashboard</h2>
-      <p id="onlineCount">Online Nodes: ...</p>
-      <p id="taskCount">Total Tasks: ...</p>
+  <div id="ui">
+    <div id="title">INFERNET — Network View</div>
+    <div id="dashboard">
+      <div>Nodes: <span id="dash-nodes">…</span></div>
+      <div>Online: <span id="dash-online">…</span></div>
+      <div>Tasks: <span id="dash-tasks">…</span></div>
     </div>
   </div>
-  <div id="map"></div>
+
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <!-- tooltip (mobile friendly) -->
+  <div id="tooltip" class="hidden"></div>
 
   <script src="nodes.js"></script>
 </body>
