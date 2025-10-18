@@ -55,7 +55,7 @@
   <div class="dashboard" id="stats">Loading...</div>
 
   <script>
-    // Initialize map
+    // Initialize map (no repeat)
     const map = L.map('map', {
       center: [20, 0],
       zoom: 2,
@@ -64,15 +64,18 @@
       scrollWheelZoom: false,
       doubleClickZoom: false,
       boxZoom: false,
-      keyboard: false
+      keyboard: false,
+      worldCopyJump: false, // prevent repeated world
+      maxBoundsViscosity: 1.0
     });
 
-    // Background layer (dark static map)
+    // Disable repeated map tiles
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      noWrap: true,
+      bounds: [[-90, -180], [90, 180]],
       attribution: ''
     }).addTo(map);
 
-    // Node data
     const nodes = [
       { name: "Tokyo 🇯🇵", lat: 35.6895, lon: 139.6917, status: "online", tasks: 12, completed: 48 },
       { name: "Singapore 🇸🇬", lat: 1.3521, lon: 103.8198, status: "online", tasks: 9, completed: 41 },
@@ -88,7 +91,6 @@
     let onlineCount = 0, totalTasks = 0, totalCompleted = 0;
     const points = [];
 
-    // Add nodes and stats
     nodes.forEach(n => {
       if (n.status === "online") onlineCount++;
       totalTasks += n.tasks;
@@ -107,7 +109,6 @@
       points.push(marker.getLatLng());
     });
 
-    // Draw connections
     for (let i = 0; i < points.length; i++) {
       for (let j = i + 1; j < points.length; j++) {
         const dist = map.distance(points[i], points[j]);
@@ -120,7 +121,6 @@
       }
     }
 
-    // Dashboard info
     document.getElementById('stats').innerHTML = `
       🌐 <b>Nodes:</b> <span>${nodes.length}</span><br>
       🟢 <b>Online:</b> <span>${onlineCount}</span><br>
