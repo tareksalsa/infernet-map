@@ -1,11 +1,12 @@
 {
   "nodes": [
-    { "id": 1, "name": "Asia Node", "coords": [35, 100], "status": "active" },
-    { "id": 2, "name": "Europe Node", "coords": [51, 10], "status": "busy" },
-    { "id": 3, "name": "US Node", "coords": [40, -100], "status": "offline" }
-  ],
-  "links": [
-    { "from": [35, 100], "to": [51, 10] },
-    { "from": [51, 10], "to": [40, -100] }
+    { "name": "Tokyo 🇯🇵", "region": "East Asia", "lat": 35.6895, "lon": 139.6917, "status": "online", "version": "0.3.1", "tasks": 12, "completed": 48 },
+    { "name": "Singapore 🇸🇬", "region": "Southeast Asia", "lat": 1.3521, "lon": 103.8198, "status": "online", "version": "0.3.1", "tasks": 9, "completed": 41 },
+    { "name": "Frankfurt 🇩🇪", "region": "Europe", "lat": 50.1109, "lon": 8.6821, "status": "online", "version": "0.3.1", "tasks": 6, "completed": 38 },
+    { "name": "London 🇬🇧", "region": "Europe", "lat": 51.5074, "lon": -0.1278, "status": "online", "version": "0.3.1", "tasks": 8, "completed": 32 },
+    { "name": "San Francisco 🇺🇸", "region": "North America", "lat": 37.7749, "lon": -122.4194, "status": "maintenance", "version": "0.3.0", "tasks": 3, "completed": 27 },
+    { "name": "Toronto 🇨🇦", "region": "North America", "lat": 43.65107, "lon": -79.347015, "status": "online", "version": "0.3.1", "tasks": 5, "completed": 34 },
+    { "name": "São Paulo 🇧🇷", "region": "South America", "lat": -23.5505, "lon": -46.6333, "status": "offline", "version": "0.2.9", "tasks": 0, "completed": 22 },
+    { "name": "Sydney 🇦🇺", "region": "Oceania", "lat": -33.8688, "lon": 151.2093, "status": "online", "version": "0.3.2", "tasks": 7, "completed": 30 }
   ]
 }
