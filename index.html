@@ -1,89 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Infernet Global Nodes</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infernet Live Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { margin: 0; background: #000; color: white; font-family: sans-serif; }
+    #map { width: 100vw; height: 100vh; }
+    .dashboard {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(20,20,20,0.8);
+      padding: 10px 15px; border-radius: 10px;
+      box-shadow: 0 0 10px #0f0;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-  <!-- Dashboard -->
-  <div id="dashboard">
-    <div class="stat">
-      <h2 id="nodesCount">0</h2>
-      <p>Active Nodes</p>
-    </div>
-    <div class="stat">
-      <h2 id="tasksCount">0</h2>
-      <p>Running Tasks</p>
-    </div>
+  <div id="map"></div>
+  <div class="dashboard">
+    <div>🟢 Online Nodes: <span id="onlineCount">0</span></div>
+    <div>⚙️ Active Tasks: <span id="taskCount">0</span></div>
   </div>
 
-  <!-- Map -->
-  <div id="map"></div>
-
   <script>
-    // Create a static map
-    const map = L.map("map", {
-      zoomControl: false,
-      worldCopyJump: false,
-      dragging: false,
-      zoomSnap: 0.5,
-      minZoom: 2.3,
-      maxZoom: 2.3
-    }).setView([25, 0], 2.3);
+    const map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
 
-    // Dark background
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      subdomains: "abcd",
-      noWrap: true
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Load nodes
-    fetch("nodes.json")
-      .then(res => res.json())
+    let lines = [];
+
+    fetch('nodes.json')
+      .then(r => r.json())
       .then(data => {
-        let activeNodes = 0, runningTasks = 0;
-        const coords = [];
+        const nodes = data.nodes;
 
-        data.nodes.forEach(node => {
-          if (node.status === "online") activeNodes++;
-          runningTasks += node.tasks;
-          coords.push([node.lat, node.lon]);
+        // Dashboard update
+        const online = nodes.filter(n => n.status === 'online');
+        document.getElementById('onlineCount').innerText = online.length;
+        document.getElementById('taskCount').innerText = online.reduce((a,b)=>a+b.tasks,0);
 
-          // Pulse icon
-          const pulseIcon = L.divIcon({
-            className: "pulse-icon",
-            html: `<div class="pulse"></div>`,
-            iconSize: [16, 16],
-            iconAnchor: [8, 8]
-          });
-
-          const marker = L.marker([node.lat, node.lon], { icon: pulseIcon }).addTo(map);
-          marker.bindPopup(`
-            <b>${node.name}</b><br>
-            ${node.region}<br>
-            Tasks: ${node.tasks}
-          `);
+        // Add markers
+        nodes.forEach(n => {
+          const color = n.status === 'online' ? 'lime' :
+                        n.status === 'maintenance' ? 'yellow' : 'red';
+          const marker = L.circleMarker([n.lat, n.lon], {
+            radius: 8, color: color, fillOpacity: 0.9
+          }).addTo(map);
+          marker.bindTooltip(`<b>${n.name}</b><br>Status: ${n.status}<br>Tasks: ${n.tasks}`);
         });
 
-        // Draw random network lines
-        for (let i = 0; i < coords.length - 1; i++) {
-          const next = coords[i + 1];
-          const prev = coords[i];
-          L.polyline([prev, next], {
-            color: "#00ff88",
-            weight: 1,
-            opacity: 0.5,
-            dashArray: "5, 8"
-          }).addTo(map);
+        // Draw animated connections
+        function drawConnections() {
+          // remove old lines
+          lines.forEach(l => map.removeLayer(l));
+          lines = [];
+
+          // choose random pairs of online nodes
+          const active = online.sort(() => 0.5 - Math.random()).slice(0, 4);
+          for (let i = 0; i < active.length - 1; i++) {
+            const from = active[i];
+            const to = active[i+1];
+            const line = L.polyline([[from.lat, from.lon], [to.lat, to.lon]], {
+              color: '#0ff',
+              weight: 2,
+              opacity: 0.6,
+              dashArray: '10,10'
+            }).addTo(map);
+
+            lines.push(line);
+
+            // simulate animation
+            let offset = 0;
+            const animate = () => {
+              offset = (offset + 1) % 20;
+              line.setStyle({ dashOffset: offset });
+              line._path && (line._path.style.transition = "stroke-dashoffset 0.1s linear");
+            };
+            setInterval(animate, 100);
+          }
         }
 
-        // Update dashboard stats
-        document.getElementById("nodesCount").textContent = activeNodes;
-        document.getElementById("tasksCount").textContent = runningTasks;
+        drawConnections();
+        setInterval(drawConnections, 3000); // refresh connections every 3s
       });
   </script>
 </body>
