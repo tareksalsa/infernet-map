@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {
+      "name": "Node - Tokyo 🇯🇵",
+      "region": "East Asia",
+      "lat": 35.6895,
+      "lon": 139.6917,
+      "status": "online",
+      "version": "v0.3.1"
+    },
+    {
+      "name": "Node - Frankfurt 🇩🇪",
+      "region": "Europe",
+      "lat": 50.1109,
+      "lon": 8.6821,
+      "status": "online",
+      "version": "v0.3.1"
+    },
+    {
+      "name": "Node - San Francisco 🇺🇸",
+      "region": "North America",
+      "lat": 37.7749,
+      "lon": -122.4194,
+      "status": "maintenance",
+      "version": "v0.3.0"
+    },
+    {
+      "name": "Node - Singapore 🇸🇬",
+      "region": "Southeast Asia",
+      "lat": 1.3521,
+      "lon": 103.8198,
+      "status": "online",
+      "version": "v0.3.1"
+    },
+    {
+      "name": "Node - São Paulo 🇧🇷",
+      "region": "South America",
+      "lat": -23.5505,
+      "lon": -46.6333,
+      "status": "offline",
+      "version": "v0.2.9"
+    }
+  ]
+}
