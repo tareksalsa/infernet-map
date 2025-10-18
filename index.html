@@ -7,22 +7,36 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    body { margin: 0; background: #000; color: white; font-family: sans-serif; }
-    #map { width: 100vw; height: 100vh; }
+    body {
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    #map {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+    }
     .dashboard {
-      position: absolute; top: 10px; left: 10px;
-      background: rgba(20,20,20,0.8);
-      padding: 10px 15px; border-radius: 10px;
-      box-shadow: 0 0 10px #0f0;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px #0f0;
       font-size: 14px;
+      z-index: 9999;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div class="dashboard">
-    <div>🟢 Online Nodes: <span id="onlineCount">0</span></div>
-    <div>⚙️ Active Tasks: <span id="taskCount">0</span></div>
+    🟢 Online Nodes: <span id="onlineCount">0</span><br>
+    ⚙️ Active Tasks: <span id="taskCount">0</span>
   </div>
 
   <script>
@@ -35,58 +49,68 @@
     let lines = [];
 
     fetch('nodes.json')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error("nodes.json not found");
+        return r.json();
+      })
       .then(data => {
         const nodes = data.nodes;
 
-        // Dashboard update
         const online = nodes.filter(n => n.status === 'online');
         document.getElementById('onlineCount').innerText = online.length;
         document.getElementById('taskCount').innerText = online.reduce((a,b)=>a+b.tasks,0);
 
-        // Add markers
         nodes.forEach(n => {
           const color = n.status === 'online' ? 'lime' :
                         n.status === 'maintenance' ? 'yellow' : 'red';
+
           const marker = L.circleMarker([n.lat, n.lon], {
-            radius: 8, color: color, fillOpacity: 0.9
+            radius: 8,
+            color,
+            fillOpacity: 0.9
           }).addTo(map);
-          marker.bindTooltip(`<b>${n.name}</b><br>Status: ${n.status}<br>Tasks: ${n.tasks}`);
+
+          marker.bindTooltip(`
+            <b>${n.name}</b><br>
+            Status: ${n.status}<br>
+            Tasks: ${n.tasks}<br>
+            Completed: ${n.completed}
+          `);
         });
 
-        // Draw animated connections
         function drawConnections() {
-          // remove old lines
           lines.forEach(l => map.removeLayer(l));
           lines = [];
 
-          // choose random pairs of online nodes
-          const active = online.sort(() => 0.5 - Math.random()).slice(0, 4);
-          for (let i = 0; i < active.length - 1; i++) {
-            const from = active[i];
-            const to = active[i+1];
+          const shuffled = online.sort(() => 0.5 - Math.random());
+          const pairs = shuffled.slice(0, Math.min(4, shuffled.length - 1));
+
+          for (let i = 0; i < pairs.length - 1; i++) {
+            const from = pairs[i];
+            const to = pairs[i + 1];
+
             const line = L.polyline([[from.lat, from.lon], [to.lat, to.lon]], {
-              color: '#0ff',
+              color: '#00ffff',
               weight: 2,
-              opacity: 0.6,
-              dashArray: '10,10'
+              opacity: 0.7,
+              dashArray: '6,8'
             }).addTo(map);
 
             lines.push(line);
-
-            // simulate animation
             let offset = 0;
-            const animate = () => {
-              offset = (offset + 1) % 20;
-              line.setStyle({ dashOffset: offset });
-              line._path && (line._path.style.transition = "stroke-dashoffset 0.1s linear");
-            };
-            setInterval(animate, 100);
+            setInterval(() => {
+              offset = (offset + 1) % 16;
+              if (line._path) line._path.style.strokeDashoffset = offset;
+            }, 100);
           }
         }
 
         drawConnections();
-        setInterval(drawConnections, 3000); // refresh connections every 3s
+        setInterval(drawConnections, 4000);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("⚠️ Error loading nodes.json");
       });
   </script>
 </body>
