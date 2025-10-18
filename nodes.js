@@ -1,0 +1,220 @@
+// nodes.js — Network style interactive demo
+// Works without external libs. Designed for GitHub Pages / mobile.
+
+// ----- CONFIG -----
+const UPDATE_INTERVAL = 30000; // ms
+const PULSE_SPEED = 0.012;     // line pulse speed
+const NODE_PULSE = 0.9;        // node size pulse magnitude
+
+// Node list (x,y in normalized viewport coordinates [0..1])
+let nodes = [
+  { id: 1, name: "Tokyo",     x: 0.78, y: 0.36, status: "online",     tasks: 12, completed: 48 },
+  { id: 2, name: "Singapore", x: 0.82, y: 0.48, status: "online",     tasks: 9,  completed: 41 },
+  { id: 3, name: "Frankfurt", x: 0.56, y: 0.34, status: "online",     tasks: 6,  completed: 38 },
+  { id: 4, name: "London",    x: 0.52, y: 0.32, status: "busy",       tasks: 8,  completed: 32 },
+  { id: 5, name: "SF",        x: 0.15, y: 0.38, status: "maintenance",tasks: 3,  completed: 27 },
+  { id: 6, name: "Toronto",   x: 0.17, y: 0.34, status: "online",     tasks: 5,  completed: 34 },
+  { id: 7, name: "Sao Paulo", x: 0.22, y: 0.62, status: "offline",    tasks: 0,  completed: 22 },
+  { id: 8, name: "Sydney",    x: 0.92, y: 0.75, status: "online",     tasks: 7,  completed: 30 }
+];
+
+const COLOR = {
+  online: '#7CFFB2',        // mint
+  busy:   '#FFB86B',        // orange
+  maintenance: '#FFD166',   // yellow
+  offline: '#FF6B6B'        // red
+};
+
+// ----- Canvas setup -----
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(innerWidth * dpr);
+  canvas.height = Math.floor(innerHeight * dpr);
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Utility: convert normalized node pos -> pixel
+function px(node){
+  return { x: Math.round(node.x * innerWidth), y: Math.round(node.y * innerHeight) };
+}
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+function showTooltip(text, pxX, pxY){
+  tooltip.innerHTML = text;
+  tooltip.style.left = pxX + 'px';
+  tooltip.style.top  = pxY + 'px';
+  tooltip.classList.remove('hidden');
+}
+function hideTooltip(){ tooltip.classList.add('hidden'); }
+
+// Dashboard
+function updateDashboard(){
+  const nodesCount = nodes.length;
+  const onlineCount = nodes.filter(n => n.status !== 'offline').length;
+  const tasks = nodes.reduce((s,n) => s + (n.tasks||0), 0);
+  document.getElementById('dash-nodes').textContent = nodesCount;
+  document.getElementById('dash-online').textContent = onlineCount;
+  document.getElementById('dash-tasks').textContent = tasks;
+}
+updateDashboard();
+
+// ----- Animation state -----
+let time = 0;
+let lastTick = performance.now();
+
+// Draw loop
+function draw(now){
+  const dt = now - lastTick;
+  lastTick = now;
+  time += dt;
+
+  // clear
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+
+  // subtle vignette & background glow
+  const g = ctx.createLinearGradient(0,0,innerWidth,innerHeight);
+  g.addColorStop(0, "rgba(2,6,16,0.25)");
+  g.addColorStop(1, "rgba(0,0,0,0.6)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,innerWidth,innerHeight);
+
+  // draw soft halo under network center
+  ctx.beginPath();
+  ctx.fillStyle = 'rgba(0,220,255,0.02)';
+  ctx.ellipse(innerWidth*0.5, innerHeight*0.45, innerWidth*0.55, innerHeight*0.45, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // draw animated connections (pulse along dash)
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      const a = px(nodes[i]), b = px(nodes[j]);
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.hypot(dx,dy);
+      if(dist > Math.min(innerWidth, innerHeight)*0.9) continue; // limit very long ones
+
+      // base line
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(0,200,255,0.08)';
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+
+      // pulsing moving dots along line
+      const speed = 0.0005 + (Math.abs(Math.sin((i+j))) * 0.0012);
+      const phase = (time * speed * (i+1+j)) % 1;
+      const tcount = Math.max(1, Math.floor(dist / 180)); // how many pulses
+      for(let k=0;k<tcount;k++){
+        const tt = (phase + k / tcount) % 1;
+        const pxpos = a.x + dx * tt, pypos = a.y + dy * tt;
+        const alpha = 0.2 + 0.8 * Math.sin((tt*Math.PI*2));
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(0,230,255,${alpha})`;
+        ctx.arc(pxpos, pypos, 2.2, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // draw nodes (with subtle pulsing)
+  nodes.forEach((n, idx) => {
+    const p = px(n);
+    const baseR = 6;
+    const pulse = 1 + NODE_PULSE * 0.12 * Math.sin(time * 0.008 + idx);
+    // shadow/glow
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(0,200,255,0.06)';
+    ctx.shadowColor = COLOR(n);
+    ctx.shadowBlur = 18;
+    ctx.arc(p.x, p.y, baseR * 2.2 * (pulse*0.6), 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // main circle
+    ctx.beginPath();
+    ctx.fillStyle = COLOR(n);
+    ctx.arc(p.x, p.y, baseR * pulse, 0, Math.PI*2);
+    ctx.fill();
+
+    // inner ring for busy/maintenance
+    if(n.status === 'busy' || n.status === 'maintenance'){
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 2;
+      ctx.arc(p.x, p.y, baseR * pulse + 6, 0, Math.PI*2);
+      ctx.stroke();
+    }
+  });
+
+  requestAnimationFrame(draw);
+}
+
+function COLOR(node){
+  if(node.status === 'online') return '#7CFFB2';
+  if(node.status === 'busy')   return '#FFB86B';
+  if(node.status === 'maintenance') return '#FFD166';
+  return '#FF6B6B';
+}
+
+// ----- Interaction: show tooltip on tap/click -----
+let touchTimer = null;
+function pointerHandler(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+  const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+  // find nearest node within 28px
+  let nearest = null, ndist = 9999;
+  nodes.forEach(n => {
+    const p = px(n);
+    const d = Math.hypot(p.x - x, p.y - y);
+    if(d < ndist){ ndist = d; nearest = n; }
+  });
+  if(nearest && ndist < 28){
+    showTooltip(`<b>${nearest.name}</b><br>Status: ${nearest.status}<br>Tasks: ${nearest.tasks}<br>Completed: ${nearest.completed}`, x, y);
+    clearTimeout(touchTimer);
+    touchTimer = setTimeout(hideTooltip, 4000);
+  } else {
+    hideTooltip();
+  }
+}
+canvas.addEventListener('click', pointerHandler);
+canvas.addEventListener('touchstart', (ev)=> { pointerHandler(ev); ev.preventDefault(); }, {passive:false});
+
+// ----- Data updater (simulated) -----
+function randomUpdate(){
+  nodes = nodes.map(n => {
+    // small chance to change status
+    if(Math.random() < 0.15){
+      const choices = ['online','busy','maintenance','offline'];
+      n.status = choices[Math.floor(Math.random()*choices.length)];
+    }
+    // tasks fluctuate a bit
+    n.tasks = Math.max(0, n.tasks + Math.floor(Math.random()*3) - 1);
+    n.completed = n.completed + Math.floor(Math.random()*2);
+    return n;
+  });
+  updateDashboard();
+}
+
+function updateDashboard(){
+  const total = nodes.length;
+  const online = nodes.filter(n => n.status !== 'offline').length;
+  const tasks = nodes.reduce((s,n)=>s+(n.tasks||0),0);
+  document.getElementById('dash-nodes').textContent = total;
+  document.getElementById('dash-online').textContent = online;
+  document.getElementById('dash-tasks').textContent = tasks;
+}
+
+// Start
+updateDashboard();
+requestAnimationFrame(draw);
+setInterval(randomUpdate, UPDATE_INTERVAL);
+
+// hide tooltip on scroll/resize
+window.addEventListener('resize', ()=> { hideTooltip(); resize(); });
+window.addEventListener('scroll', hideTooltip);
